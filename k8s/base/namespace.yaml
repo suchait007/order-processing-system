@@ -4,3 +4,5 @@ metadata:
   name: order-system
   labels:
     app.kubernetes.io/part-of: order-system
+  annotations:
+    linkerd.io/inject: enabled
