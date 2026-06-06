@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: sqlserver
+      annotations:
+        linkerd.io/inject: disabled
     spec:
       containers:
         - name: sqlserver

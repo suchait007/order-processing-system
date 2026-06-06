@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: postgres
+      annotations:
+        linkerd.io/inject: disabled
     spec:
       containers:
         - name: postgres

@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: kafka
+      annotations:
+        linkerd.io/inject: disabled
     spec:
       containers:
         - name: kafka

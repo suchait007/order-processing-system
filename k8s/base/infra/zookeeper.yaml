@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: zookeeper
+      annotations:
+        linkerd.io/inject: disabled
     spec:
       containers:
         - name: zookeeper
