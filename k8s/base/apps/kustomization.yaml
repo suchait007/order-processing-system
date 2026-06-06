@@ -6,3 +6,4 @@ resources:
   - store-api.yaml
   - order-service.yaml
   - inventory-worker.yaml
+  - store-api-serviceprofile.yaml

@@ -1,0 +1,31 @@
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: store-api.order-system.svc.cluster.local
+  namespace: order-system
+spec:
+  routes:
+    - name: GET /api/products
+      condition:
+        method: GET
+        pathRegex: /api/products
+    - name: GET /api/products/{id}
+      condition:
+        method: GET
+        pathRegex: /api/products/[^/]+
+    - name: POST /api/products
+      condition:
+        method: POST
+        pathRegex: /api/products
+    - name: PUT /api/products/{id}
+      condition:
+        method: PUT
+        pathRegex: /api/products/[^/]+
+    - name: DELETE /api/products/{id}
+      condition:
+        method: DELETE
+        pathRegex: /api/products/[^/]+
+    - name: GET /api/products/{id}/stock
+      condition:
+        method: GET
+        pathRegex: /api/products/[^/]+/stock
