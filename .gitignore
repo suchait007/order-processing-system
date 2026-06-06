@@ -1,0 +1,28 @@
+# Build output
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+**/logs/
+
+# Docker local data
+**/db/
+
+# Temp
+*.tmp
+*.bak
+*.swp

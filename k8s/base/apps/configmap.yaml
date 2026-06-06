@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  REDIS_CONFIGURATION: "redis:6379"
+  STORE_API_BASE_URL: "http://store-api:5116"
+  INVENTORY_LOW_STOCK_THRESHOLD: "10"

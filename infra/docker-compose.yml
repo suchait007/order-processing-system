@@ -1,0 +1,222 @@
+version: '3.8'
+
+services:
+  # ──────────────────────────────────────────────
+  # Redis
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ──────────────────────────────────────────────
+  # Zookeeper (required by Kafka)
+  # ──────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ──────────────────────────────────────────────
+  # Kafka Broker (Confluent)
+  # ──────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"     # External (host) access
+      - "29092:29092"   # Internal (container-to-container) access
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # Schema Registry (for Avro schemas — used by the Platform)
+  # ──────────────────────────────────────────────
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.1
+    container_name: schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # Kafka UI (web dashboard to view topics, messages, consumers)
+  # ──────────────────────────────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - schema-registry
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # Redis Commander (web UI for Redis)
+  # ──────────────────────────────────────────────
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8082:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # SQL Server: runs as standalone container (not in compose)
+  # Start manually: docker run -d --name sqlserver --network infra_default -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=ChangeMeNow123!" -p 1433:1433 -v sqlserver-data:/var/opt/mssql mcr.microsoft.com/mssql/server:2022-latest
+  # ──────────────────────────────────────────────
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL (for OrderService)
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ChangeMeNow123!
+      POSTGRES_DB: OrdersDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d OrdersDb"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ══════════════════════════════════════════════
+  # APPLICATION SERVICES
+  # ══════════════════════════════════════════════
+
+  # ──────────────────────────────────────────────
+  # StoreApi (.NET 8 — Product Catalog)
+  # ──────────────────────────────────────────────
+  store-api:
+    build:
+      context: ../StoreApi
+      dockerfile: Dockerfile
+    container_name: store-api
+    ports:
+      - "5116:5116"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=StoreApiDb;User Id=sa;Password=ChangeMeNow123!;TrustServerCertificate=True"
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # OrderService (.NET 8 — Order Placement)
+  # ──────────────────────────────────────────────
+  order-service:
+    build:
+      context: ../OrderService
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "5200:5200"
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=OrdersDb;Username=admin;Password=ChangeMeNow123!"
+      Kafka__BootstrapServers: "kafka:29092"
+      Redis__Configuration: "redis:6379"
+      StoreApi__BaseUrl: "http://store-api:5116"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      store-api:
+        condition: service_started
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # InventoryWorker (.NET 8 — Background Kafka Consumer)
+  # ──────────────────────────────────────────────
+  inventory-worker:
+    build:
+      context: ../InventoryWorker
+      dockerfile: Dockerfile
+    container_name: inventory-worker
+    environment:
+      ConnectionStrings__StoreApiDb: "Server=sqlserver,1433;Database=StoreApiDb;User Id=sa;Password=ChangeMeNow123!;TrustServerCertificate=True"
+      Kafka__BootstrapServers: "kafka:29092"
+      Redis__Configuration: "redis:6379"
+      Inventory__LowStockThreshold: "10"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  postgres-data:

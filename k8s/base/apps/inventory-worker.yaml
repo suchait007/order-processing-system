@@ -1,0 +1,51 @@
+# InventoryWorker — Background Kafka consumer
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-worker
+  labels:
+    app: inventory-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-worker
+  template:
+    metadata:
+      labels:
+        app: inventory-worker
+    spec:
+      containers:
+        - name: inventory-worker
+          image: order-system/inventory-worker:v1
+          imagePullPolicy: Never
+          env:
+            - name: DOTNET_ENVIRONMENT
+              value: Development
+            - name: ConnectionStrings__StoreApiDb
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: INVENTORY_WORKER_CONN
+            - name: Kafka__BootstrapServers
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: Redis__Configuration
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: REDIS_CONFIGURATION
+            - name: Inventory__LowStockThreshold
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: INVENTORY_LOW_STOCK_THRESHOLD
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

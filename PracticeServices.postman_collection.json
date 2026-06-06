@@ -1,0 +1,491 @@
+{
+  "info": {
+    "name": "Practice Services — StoreApi + OrderService",
+    "_postman_id": "practice-services-collection",
+    "description": "Full API collection for the Real-Time Inventory & Order Processing System.\n\nStoreApi (SQL Server) — Product catalog & store management\nOrderService (PostgreSQL) — Order placement & tracking\nInventoryWorker — No HTTP API (Kafka background consumer)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "storeApiUrl",
+      "value": "http://localhost:5116",
+      "type": "string"
+    },
+    {
+      "key": "orderServiceUrl",
+      "value": "http://localhost:5200",
+      "type": "string"
+    },
+    {
+      "key": "storeId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "StoreApi",
+      "description": "Product catalog & store management — SQL Server on port 5116",
+      "item": [
+        {
+          "name": "Stores",
+          "item": [
+            {
+              "name": "List All Stores",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/stores",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "stores"]
+                }
+              }
+            },
+            {
+              "name": "Get Store by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/stores/{{storeId}}",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "stores", "{{storeId}}"]
+                }
+              }
+            },
+            {
+              "name": "Create Store",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Gadget World\",\n  \"address\": \"789 Tech Blvd\",\n  \"city\": \"Hamburg\",\n  \"phone\": \"+49-40-9876543\"\n}"
+                },
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/stores",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "stores"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    pm.collectionVariables.set('storeId', json.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Store",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Gadget World (Updated)\",\n  \"address\": \"789 Tech Blvd, Floor 2\",\n  \"city\": \"Hamburg\",\n  \"phone\": \"+49-40-9876543\"\n}"
+                },
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/stores/{{storeId}}",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "stores", "{{storeId}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete Store",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/stores/{{storeId}}",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "stores", "{{storeId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "List All Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/products",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "products"]
+                }
+              }
+            },
+            {
+              "name": "List Products by Category",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/products?category=Peripherals",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "products"],
+                  "query": [
+                    { "key": "category", "value": "Peripherals" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Products by Store",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/products?storeId={{storeId}}",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "products"],
+                  "query": [
+                    { "key": "storeId", "value": "{{storeId}}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Product by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/products/{{productId}}",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "products", "{{productId}}"]
+                }
+              }
+            },
+            {
+              "name": "Create Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Gaming Headset\",\n  \"description\": \"7.1 surround sound gaming headset with noise cancellation\",\n  \"price\": 129.99,\n  \"stockQuantity\": 50,\n  \"category\": \"Peripherals\",\n  \"storeId\": {{storeId}}\n}"
+                },
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/products",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "products"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    pm.collectionVariables.set('productId', json.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Product",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Gaming Headset Pro\",\n  \"description\": \"7.1 surround sound gaming headset — v2 with RGB\",\n  \"price\": 149.99,\n  \"stockQuantity\": 45,\n  \"category\": \"Peripherals\",\n  \"storeId\": {{storeId}}\n}"
+                },
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/products/{{productId}}",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "products", "{{productId}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete Product",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{storeApiUrl}}/api/products/{{productId}}",
+                  "host": ["{{storeApiUrl}}"],
+                  "path": ["api", "products", "{{productId}}"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "OrderService",
+      "description": "Order placement & tracking — PostgreSQL on port 5200.\nPlacing an order triggers the full Kafka event flow:\nOrderService → order-placed → InventoryWorker → inventory-updated → OrderService",
+      "item": [
+        {
+          "name": "Place Order (triggers Kafka flow)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"quantity\": 5,\n  \"customerName\": \"Suchait Gaurav\",\n  \"customerEmail\": \"suchait@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('orderId', json.id);",
+                  "    console.log('Order created: ' + json.id);",
+                  "    console.log('Status: ' + json.status);",
+                  "    console.log('Wait a few seconds, then call Get Order to see status change to Confirmed');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders/{{orderId}}",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            }
+          }
+        },
+        {
+          "name": "List All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "List Orders by Status (Pending)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders?status=Pending",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders"],
+              "query": [
+                { "key": "status", "value": "Pending" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Orders by Status (Confirmed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders?status=Confirmed",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders"],
+              "query": [
+                { "key": "status", "value": "Confirmed" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders/{{orderId}}",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "End-to-End Flow Test",
+      "description": "Run these requests in sequence to test the full event-driven flow:\n1. Get product (see stock)\n2. Place order\n3. Wait 2-3 seconds for Kafka processing\n4. Get order (should be Confirmed)\n5. Get product again (stock should be decremented)",
+      "item": [
+        {
+          "name": "1. Check Product Stock (Before)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{storeApiUrl}}/api/products/1",
+              "host": ["{{storeApiUrl}}"],
+              "path": ["api", "products", "1"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    console.log('Product: ' + json.name);",
+                  "    console.log('Stock BEFORE order: ' + json.stockQuantity);",
+                  "    pm.collectionVariables.set('productId', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Place Order (5 units)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"quantity\": 5,\n  \"customerName\": \"E2E Test User\",\n  \"customerEmail\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('orderId', json.id);",
+                  "    console.log('Order placed: ' + json.id);",
+                  "    console.log('Initial status: ' + json.status);",
+                  "    console.log('>>> Wait 2-3 seconds, then run step 3 <<<');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Get Order Status (should be Confirmed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/orders/{{orderId}}",
+              "host": ["{{orderServiceUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    console.log('Order status: ' + json.status);",
+                  "    if (json.status === 'Confirmed') {",
+                  "        console.log('SUCCESS — Kafka flow completed!');",
+                  "    } else if (json.status === 'Pending') {",
+                  "        console.log('Still Pending — wait a moment and retry');",
+                  "    } else {",
+                  "        console.log('Status: ' + json.status);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Check Product Stock (After — should be decremented)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{storeApiUrl}}/api/products/1",
+              "host": ["{{storeApiUrl}}"],
+              "path": ["api", "products", "1"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    console.log('Product: ' + json.name);",
+                  "    console.log('Stock AFTER order: ' + json.stockQuantity);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

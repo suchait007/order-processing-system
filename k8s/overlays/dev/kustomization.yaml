@@ -1,0 +1,32 @@
+# Dev overlay — local Kind cluster
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Override namespace for dev
+namespace: order-system
+
+# Tag all resources as dev environment
+commonAnnotations:
+  environment: dev
+  managed-by: kustomize
+
+# Dev-specific image tags
+images:
+  - name: order-system/store-api
+    newTag: v1
+  - name: order-system/order-service
+    newTag: v1
+  - name: order-system/inventory-worker
+    newTag: v1
+
+# Dev uses single replicas (save resources)
+replicas:
+  - name: store-api
+    count: 1
+  - name: order-service
+    count: 1
+  - name: inventory-worker
+    count: 1

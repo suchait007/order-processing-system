@@ -1,0 +1,53 @@
+# Prod overlay — hypothetical production environment
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: order-system-prod
+
+commonAnnotations:
+  environment: prod
+  managed-by: kustomize
+
+# Prod uses specific version tags (not :latest or :v1)
+images:
+  - name: order-system/store-api
+    newTag: v1.0.0
+  - name: order-system/order-service
+    newTag: v1.0.0
+  - name: order-system/inventory-worker
+    newTag: v1.0.0
+
+# Prod runs more replicas for HA
+replicas:
+  - name: store-api
+    count: 2
+  - name: order-service
+    count: 3
+  - name: inventory-worker
+    count: 2
+
+# Prod overrides: higher resource limits
+patches:
+  - target:
+      kind: Deployment
+      name: order-service
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 1Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1"
+  - target:
+      kind: Deployment
+      name: store-api
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 1Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1"
