@@ -27,6 +27,6 @@ replicas:
   - name: store-api
     count: 1
   - name: order-service
-    count: 1
+    count: 2
   - name: inventory-worker
     count: 1
