@@ -23,6 +23,7 @@ public class KafkaProducerService : IDisposable
             Acks = Acks.All,
             EnableIdempotence = true
         };
+        KafkaSecurity.Apply(producerConfig, configuration);
 
         _producer = new ProducerBuilder<string, string>(producerConfig).Build();
     }

@@ -31,6 +31,7 @@ public class OrderPlacedConsumer : BackgroundService
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false
         };
+        KafkaSecurity.Apply(_consumerConfig, configuration);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

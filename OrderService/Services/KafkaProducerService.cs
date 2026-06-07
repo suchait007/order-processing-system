@@ -21,6 +21,7 @@ public class KafkaProducerService : IDisposable
         {
             BootstrapServers = bootstrapServers
         };
+        KafkaSecurity.Apply(producerConfig, configuration);
 
         _producer = new ProducerBuilder<string, string>(producerConfig).Build();
     }
